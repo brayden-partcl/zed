@@ -1,0 +1,25 @@
+name: Build comment-folding macOS app
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/auto-fold-comments
+
+      - name: Build unsigned Apple Silicon DMG
+        run: ./script/bundle-mac aarch64-apple-darwin
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zed-comment-folding-aarch64
+          path: target/aarch64-apple-darwin/release/Zed-aarch64.dmg
+          if-no-files-found: error
