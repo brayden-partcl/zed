@@ -15,6 +15,12 @@ jobs:
           ref: feature/auto-fold-comments
 
       - name: Build unsigned Apple Silicon DMG
+        env:
+          # cxx 1.0.187's Slice iterator is valid in C++17, but Xcode 15.4's
+          # libc++ rejects its C++20 contiguous_iterator assertion. The
+          # dependency supplies -std=c++20 itself, so use a wrapper to append
+          # the compatibility macro after its flags.
+          CXX: ${{ github.workspace }}/script/cxx-cxx17
         run: ./script/bundle-mac aarch64-apple-darwin
 
       - name: Upload DMG
