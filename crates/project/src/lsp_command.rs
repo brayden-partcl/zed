@@ -5107,6 +5107,7 @@ impl LspCommand for GetFoldingRanges {
                 LspFoldingRange {
                     range: start..end,
                     collapsed_text,
+                    kind: folding_range.kind,
                 }
             })
             .collect())
@@ -5182,6 +5183,7 @@ impl LspCommand for GetFoldingRanges {
                     collapsed_text: collapsed_text
                         .filter(|t| !t.is_empty())
                         .map(SharedString::from),
+                    kind: None,
                 })
             })
             .collect()

@@ -27,6 +27,7 @@ pub struct EditorSettings {
     pub hover_popover_delay: DelayMs,
     pub hover_popover_sticky: bool,
     pub hover_popover_hiding_delay: DelayMs,
+    pub auto_fold_comments: bool,
     pub toolbar: Toolbar,
     pub scrollbar: Scrollbar,
     pub minimap: Minimap,
@@ -225,6 +226,7 @@ impl Settings for EditorSettings {
             hover_popover_delay: editor.hover_popover_delay.unwrap(),
             hover_popover_sticky: editor.hover_popover_sticky.unwrap(),
             hover_popover_hiding_delay: editor.hover_popover_hiding_delay.unwrap(),
+            auto_fold_comments: editor.auto_fold_comments.unwrap(),
             toolbar: Toolbar {
                 breadcrumbs: toolbar.breadcrumbs.unwrap(),
                 quick_actions: toolbar.quick_actions.unwrap(),

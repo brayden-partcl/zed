@@ -279,6 +279,7 @@ impl VsCodeSettings {
             hover_popover_enabled: self.read_bool("editor.hover.enabled"),
             hover_popover_sticky: self.read_bool("editor.hover.sticky"),
             hover_popover_hiding_delay: self.read_u64("editor.hover.hidingDelay").map(Into::into),
+            auto_fold_comments: None,
             inline_code_actions: None,
             code_lens: None,
             jupyter: None,

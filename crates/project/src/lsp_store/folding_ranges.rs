@@ -26,6 +26,7 @@ use crate::project_settings::ProjectSettings;
 pub struct LspFoldingRange {
     pub range: Range<Anchor>,
     pub collapsed_text: Option<SharedString>,
+    pub kind: Option<lsp::FoldingRangeKind>,
 }
 
 pub(super) type FoldingRangeTask =
