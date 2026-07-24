@@ -102,6 +102,7 @@ use language::{
     language_settings::{AllLanguageSettings, LanguageSettings},
 };
 
+use crate::EditorSettings;
 use multi_buffer::{
     Anchor, AnchorRangeExt, MultiBuffer, MultiBufferOffset, MultiBufferOffsetUtf16,
     MultiBufferPoint, MultiBufferRow, MultiBufferSnapshot, RowInfo, ToOffset, ToPoint,
@@ -114,7 +115,7 @@ use smallvec::SmallVec;
 use sum_tree::{Bias, TreeMap};
 use text::{BufferId, LineIndent, Patch};
 use theme::StatusColors;
-use ui::{SharedString, px};
+use ui::{Disclosure, SharedString, Toggleable, Tooltip, px};
 use unicode_segmentation::UnicodeSegmentation;
 use ztracing::instrument;
 
@@ -969,10 +970,31 @@ impl DisplayMap {
         }
 
         let base_placeholder = self.fold_placeholder.clone();
+        let auto_fold_comments = EditorSettings::get_global(cx).auto_fold_comments;
+        let mut comment_creases = Vec::new();
         let creases = ranges.into_iter().filter_map(|folding_range| {
             let mb_range =
                 snapshot.buffer_anchor_range_to_anchor_range(folding_range.range.clone())?;
-            let placeholder = if let Some(collapsed_text) = folding_range.collapsed_text {
+            let is_comment = folding_range.kind == Some(lsp::FoldingRangeKind::Comment);
+            let placeholder = if is_comment && auto_fold_comments {
+                let comment_text: String = snapshot.text_for_range(mb_range.clone()).collect();
+                let comment_text = comment_text.trim().to_string();
+                FoldPlaceholder {
+                    render: Arc::new(move |fold_id, _fold_range, cx: &mut gpui::App| {
+                        use gpui::{
+                            Element as _, ParentElement as _, StatefulInteractiveElement as _,
+                        };
+                        FoldPlaceholder::fold_element(fold_id, cx)
+                            .child("💬")
+                            .tooltip(Tooltip::text(comment_text.clone()))
+                            .into_any()
+                    }),
+                    constrain_width: true,
+                    merge_adjacent: base_placeholder.merge_adjacent,
+                    type_tag: base_placeholder.type_tag,
+                    collapsed_text: Some("💬".into()),
+                }
+            } else if let Some(collapsed_text) = folding_range.collapsed_text {
                 FoldPlaceholder {
                     render: Arc::new({
                         let collapsed_text = collapsed_text.clone();
@@ -991,10 +1013,38 @@ impl DisplayMap {
             } else {
                 base_placeholder.clone()
             };
-            Some(Crease::simple(mb_range, placeholder))
+            let crease = if is_comment && auto_fold_comments {
+                let comment_text = snapshot
+                    .text_for_range(mb_range.clone())
+                    .collect::<String>()
+                    .trim()
+                    .to_string();
+                Crease::inline(
+                    mb_range,
+                    placeholder,
+                    move |row, folded, toggle, _window, _cx| {
+                        Disclosure::new(("comment_crease", row.0), !folded)
+                            .toggle_state(folded)
+                            .tooltip(Tooltip::text(comment_text.clone()))
+                            .on_click(move |_, window, cx| toggle(!folded, window, cx))
+                    },
+                    |_row, _folded, _window, _cx| gpui::Empty,
+                )
+            } else {
+                Crease::simple(mb_range, placeholder)
+            };
+            if is_comment && auto_fold_comments {
+                comment_creases.push(crease.clone());
+            }
+            Some(crease)
         });
 
-        let new_ids = self.crease_map.insert(creases, &snapshot);
+        let new_ids = self
+            .crease_map
+            .insert(creases.collect::<Vec<_>>(), &snapshot);
+        if auto_fold_comments && !comment_creases.is_empty() {
+            self.fold(comment_creases, cx);
+        }
         if !new_ids.is_empty() {
             self.lsp_folding_crease_ids.insert(buffer_id, new_ids);
         }

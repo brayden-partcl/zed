@@ -64,6 +64,10 @@ pub struct EditorSettingsContent {
     ///
     /// Default: 300
     pub hover_popover_hiding_delay: Option<DelayMs>,
+    /// Whether comment folding ranges should be folded automatically when a buffer opens.
+    ///
+    /// Default: true
+    pub auto_fold_comments: Option<bool>,
     /// Toolbar related settings
     pub toolbar: Option<ToolbarContent>,
     /// Scrollbar related settings
