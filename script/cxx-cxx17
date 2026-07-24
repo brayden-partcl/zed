@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Keep the compiler in C++20 mode for WebRTC, but make cxx's feature-test
+# checks use its C++17 Slice iterator path. This is needed with Xcode 15.4's
+# libc++ and cxx 1.0.187.
+exec c++ "$@" -D__cplusplus=201703L
